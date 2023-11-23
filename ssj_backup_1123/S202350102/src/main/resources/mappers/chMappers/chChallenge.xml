@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "//mybatis.org/DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.oracle.S202350102.chChallengeMapper">
+	<select id="popchgList" resultType="Challenge">
+		Select g.*, b.chlgerCnt
+		From (Select rownum rn, a.*
+		        From (select count(*) chlgerCnt, p.chg_id
+		                From chg_pick p
+		                join challenge c on p.chg_id = c.chg_id
+		                Group by p.chg_id
+		                ORDER BY chlgerCnt desc)a) b
+		join challenge g on b.chg_id = g.chg_id
+		Where b.rn BETWEEN 1 and 5
+		ORDER by b.rn
+	</select>
+	
+	<select id="chgResult" parameterType="java.lang.String" resultType="Challenge">
+		Select 	c.*, user1.nick
+		From  	Challenge c 
+		JOIN    user1 On c.user_num = user1.user_num 
+		Where 	(c.title 	  like '%' || #{srch_word} || '%'
+		Or	  	 c.chg_conts  like '%' || #{srch_word} || '%')
+		Order By c.reg_date DESC
+	</select>
+	
+	<select id="chgCommList" resultType="Comm">
+		Select *
+		From comm
+		Where lg =200
+		and md != 999
+	</select>
+	
+	<insert id="chgInsert" parameterType="java.lang.String">
+		Insert Into comm
+		Values(200,
+			   (Select MAX(md)+1
+				From comm
+				Where lg =200
+				and md != 999),
+			   #{ctn})
+	</insert>
+	
+	<delete id="chgDeleteComm" parameterType="java.util.ArrayList">
+		 Delete comm
+	     Where lg = 200
+	     And <foreach collection="array" item="ctn" separator=" OR " index="index">
+	        ctn = #{ctn}
+	     </foreach>			
+	</delete>
+	
+	<select id="chMyChgList" parameterType="Board" resultType="Challenge">
+		Select b.*, c.*
+		From (  Select Count(*) chlgerCnt, a.chg_id
+		        From (Select *
+		              From challenge
+		              Where user_num = #{user_num}) a
+		        left JOIN challenger g on a.chg_id = g.chg_id
+		        GROUP BY a.chg_id) b
+		join challenge c on b.chg_id = c.chg_id
+		Order By c.reg_date DESC
+	</select>
+	
+	<select id="chmyChgrList" parameterType="int" resultType="Challenge">
+		Select b.chlgerCnt, d.*
+		from (
+		    Select a.chlgerCnt , c.*
+		    From (
+		        Select count(*) as chlgerCnt, chg_id
+		        From challenger
+		        GROUP BY chg_id
+		    ) a
+		    Join challenger c on c.chg_id = a.chg_id
+		    Where c.user_num = #{user_num}
+		) b
+		join challenge d on b.chg_id = d.chg_id
+	</select>
+	
+</mapper>
